@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网络安全等级保护 2.0 学习笔记</title>
+<meta name="description" content="网络渗透测试课程作业：对等保 2.0（GB/T 22239-2019）的理解与梳理">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5l8-3z' fill='%230d8a84'/><path d='M8.5 12l2.3 2.3L15.8 9.5' stroke='%23fff' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --ink:#1b2530; --ink-soft:#46535f; --ink-faint:#7a8691;
+  --paper:#f6f8f8; --card:#ffffff; --line:#e3e8ea; --line-soft:#eef1f2;
+  --teal:#0d8a84; --teal-dark:#0a6b66; --teal-soft:#e4f2f1;
+  --amber:#b45309; --amber-soft:#fdf3e6;
+  --sidebar:#101d27; --sidebar-ink:#c3ced6; --sidebar-dim:#7c8b96;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);color:var(--ink);background:var(--paper);line-height:1.75;font-size:16px;-webkit-font-smoothing:antialiased}
+::selection{background:var(--teal);color:#fff}
+
+/* ===== 移动端顶栏 ===== */
+.topbar{display:none;position:fixed;top:0;left:0;right:0;height:56px;background:var(--sidebar);z-index:50;align-items:center;gap:12px;padding:0 16px}
+.topbar .brand{color:#fff;font-weight:700;font-size:15px;letter-spacing:.5px}
+.menu-btn{margin-left:auto;width:44px;height:44px;border:1px solid #2c3d4a;background:transparent;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;flex:none}
+.menu-btn span{display:block;width:18px;height:2px;background:#dfe7ec;border-radius:2px;transition:.25s}
+.menu-btn.open span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.menu-btn.open span:nth-child(2){opacity:0}
+.menu-btn.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+
+/* ===== 侧边目录 ===== */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:280px;background:var(--sidebar);padding:34px 0 24px;display:flex;flex-direction:column;z-index:60}
+.sidebar .logo{display:flex;align-items:center;gap:11px;padding:0 24px 22px;border-bottom:1px solid #22323e}
+.sidebar .logo svg{flex:none}
+.sidebar .logo b{color:#fff;font-size:15.5px;font-weight:700;letter-spacing:.4px;display:block;line-height:1.3}
+.sidebar .logo small{color:var(--sidebar-dim);font-size:11.5px;font-weight:400;letter-spacing:.5px}
+.toc{list-style:none;margin:18px 0;overflow-y:auto;flex:1;padding:0 14px}
+.toc a{display:flex;align-items:baseline;gap:10px;padding:9px 12px;border-radius:8px;color:var(--sidebar-ink);text-decoration:none;font-size:14px;line-height:1.4;transition:.18s;border-left:0}
+.toc a .n{font-family:var(--mono);font-size:11px;color:var(--sidebar-dim);flex:none;width:20px}
+.toc a:hover{background:#182835;color:#fff}
+.toc a.active{background:var(--teal);color:#fff}
+.toc a.active .n{color:#d7efed}
+.side-foot{padding:16px 24px 0;border-top:1px solid #22323e;font-size:12px;color:var(--sidebar-dim)}
+.side-foot a{color:var(--sidebar-ink);text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+.side-foot a:hover{color:#fff}
+.backdrop{display:none;position:fixed;inset:0;background:rgba(8,15,20,.5);z-index:55}
+
+/* ===== 主内容 ===== */
+.main{margin-left:280px;padding:0 clamp(20px,5vw,64px);max-width:1080px}
+.hero{padding:64px 0 40px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.hero .kicker{font-family:var(--mono);font-size:12.5px;color:var(--teal);letter-spacing:1.5px;margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.hero .kicker::before{content:"";width:26px;height:2px;background:var(--teal)}
+.hero h1{font-size:clamp(28px,4vw,42px);font-weight:900;line-height:1.25;letter-spacing:-.5px;margin-bottom:16px}
+.hero p.lead{font-size:17px;color:var(--ink-soft);max-width:640px}
+.hero .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{font-family:var(--mono);font-size:12.5px;background:var(--card);border:1px solid var(--line);border-radius:7px;padding:6px 12px;color:var(--ink-soft)}
+.chip b{color:var(--teal-dark);font-weight:600}
+
+section.block{padding:44px 0 8px;scroll-margin-top:30px}
+.sec-head{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.sec-head .no{font-family:var(--mono);font-size:13px;color:#fff;background:var(--teal);border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex:none;font-weight:600}
+.sec-head h2{font-size:24px;font-weight:700;letter-spacing:-.3px}
+h3{font-size:17.5px;font-weight:700;margin:30px 0 12px;display:flex;align-items:center;gap:9px}
+h3::before{content:"";width:4px;height:16px;background:var(--teal);border-radius:2px;flex:none}
+h4{font-size:15px;font-weight:700;margin:20px 0 8px;color:var(--teal-dark)}
+p{margin:10px 0;color:var(--ink)}
+p.muted,li{color:var(--ink-soft)}
+ul{margin:10px 0 10px 4px;list-style:none}
+ul li{position:relative;padding-left:20px;margin:7px 0}
+ul li::before{content:"";position:absolute;left:2px;top:11px;width:7px;height:7px;border:2px solid var(--teal);border-radius:50%}
+strong{color:var(--ink);font-weight:700}
+code,.mono{font-family:var(--mono);font-size:.88em;background:var(--teal-soft);color:var(--teal-dark);padding:2px 6px;border-radius:5px}
+.note{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:0 10px 10px 0;padding:14px 18px;margin:18px 0;font-size:14.5px;color:var(--ink-soft)}
+
+/* 表格 */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:20px 0;background:var(--card)}
+table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:14px;min-width:640px}
+col.c1{width:17%}col.c2{width:41%}col.c3{width:22%}col.c4{width:20%}
+th,td{padding:13px 15px;text-align:left;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{background:#0f2b2a;color:#fff;font-weight:600;font-size:13.5px;letter-spacing:.3px}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:nth-child(even){background:#fafcfc}
+td .lvl{font-weight:700;color:var(--ink);display:block}
+td .lvl small{display:block;font-weight:400;color:var(--ink-faint);font-size:12px;margin-top:2px}
+td .freq{font-family:var(--mono);font-size:12.5px;color:var(--teal-dark)}
+
+/* 一个中心三重防护 图示 */
+.framework{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px;margin:22px 0}
+.fw-center{background:var(--teal);color:#fff;border-radius:11px;padding:16px 20px;text-align:center;margin-bottom:0;font-weight:700;font-size:15.5px}
+.fw-center small{display:block;font-weight:400;font-size:12.5px;color:#d4ebe9;margin-top:3px}
+.fw-arrow{text-align:center;color:var(--teal);font-size:18px;line-height:1;margin:8px 0}
+.fw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.fw-cell{border:1.5px solid var(--teal);border-radius:10px;padding:13px 14px;text-align:center;background:var(--teal-soft)}
+.fw-cell b{display:block;font-size:14px;color:var(--teal-dark);margin-bottom:3px}
+.fw-cell span{font-size:12px;color:var(--ink-soft)}
+.fw-tags{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.fw-tag{border-radius:10px;padding:13px 16px;font-size:13.5px}
+.fw-tag.tech{background:#eef6f6;border:1px solid #cfe5e3}
+.fw-tag.mgmt{background:#f1f4f6;border:1px solid #d8e0e5}
+.fw-tag b{display:block;margin-bottom:5px;font-size:13px}
+.fw-tag.tech b{color:var(--teal-dark)}
+.fw-tag.mgmt b{color:#33475b}
+.fw-tag span{color:var(--ink-soft);font-size:12.8px;line-height:1.6}
+
+/* 流程时间线 */
+.timeline{margin:24px 0;display:grid;grid-template-columns:1fr;gap:0}
+.tl-item{display:grid;grid-template-columns:120px 44px 1fr;align-items:start}
+.tl-time{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--teal-dark);text-align:right;padding-right:18px;padding-top:2px}
+.tl-axis{position:relative;justify-self:center;width:2px;background:#cfe5e3;align-self:stretch}
+.tl-item:first-child .tl-axis{top:14px}
+.tl-dot{position:absolute;left:50%;top:4px;transform:translateX(-50%);width:14px;height:14px;border-radius:50%;background:var(--teal);border:3px solid var(--teal-soft);z-index:2}
+.tl-body{padding:0 0 26px 20px}
+.tl-body b{font-size:15px;display:block;margin-bottom:3px}
+.tl-body span{font-size:13.8px;color:var(--ink-soft)}
+
+/* 误区 */
+.myth{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 20px;margin:18px 0}
+.myth .m-item{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:16px 0;border-bottom:1px solid var(--line-soft)}
+.myth .m-item:last-child{border-bottom:0}
+.myth .m-no{width:28px;height:28px;border-radius:8px;background:var(--amber-soft);color:var(--amber);font-family:var(--mono);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.myth b{display:block;font-size:14.8px;margin-bottom:3px}
+.myth b .x{color:var(--amber);font-family:var(--mono);margin-right:7px}
+.myth span{font-size:13.8px;color:var(--ink-soft)}
+
+.refs{counter-reset:r;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 22px;margin:20px 0}
+.refs li{counter-increment:r;padding-left:34px;font-size:14px;margin:11px 0;color:var(--ink-soft)}
+.refs li::before{content:counter(r,decimal-leading-zero);position:absolute;left:0;top:2px;font-family:var(--mono);font-size:12px;color:var(--teal);background:none;border:none;width:auto;height:auto}
+footer{margin:48px 0 0;padding:30px 0 50px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-faint);display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center}
+footer a{color:var(--teal-dark);text-decoration:none;font-family:var(--mono);font-size:12.5px}
+footer a:hover{text-decoration:underline}
+
+@media(max-width:900px){
+  .topbar{display:flex}
+  .sidebar{transform:translateX(-100%);transition:transform .3s ease;width:270px}
+  .sidebar.show{transform:translateX(0)}
+  .backdrop.show{display:block}
+  .main{margin-left:0;padding:72px 18px 0;max-width:100%}
+  .hero{padding:24px 0 30px}
+  .fw-grid{grid-template-columns:1fr}
+  .fw-tags{grid-template-columns:1fr}
+  .tl-item{grid-template-columns:34px 1fr}
+  .tl-time{grid-column:1/3;text-align:left;padding:0 0 6px 46px}
+  .tl-axis{grid-column:1}
+  .tl-body{grid-column:2}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- 移动端顶栏 -->
+<div class="topbar">
+  <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5l8-3z" fill="#0d8a84"/></svg>
+  <span class="brand">等保 2.0 笔记</span>
+  <button class="menu-btn" id="menuBtn" aria-label="打开目录"><span></span><span></span><span></span></button>
+</div>
+<div class="backdrop" id="backdrop"></div>
+
+<!-- 侧边目录 -->
+<nav class="sidebar" id="sidebar">
+  <div class="logo">
+    <svg width="34" height="34" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5l8-3z" fill="#0d8a84"/><path d="M8.5 12l2.3 2.3L15.8 9.5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><b>等保 2.0 学习笔记</b><small>网络安全等级保护</small></div>
+  </div>
+  <ul class="toc" id="toc">
+    <li><a href="#s1"><span class="n">01</span>核心内容</a></li>
+    <li><a href="#s2"><span class="n">02</span>标准框架</a></li>
+    <li><a href="#s3"><span class="n">03</span>具体要求</a></li>
+    <li><a href="#s4"><span class="n">04</span>实施流程</a></li>
+    <li><a href="#s5"><span class="n">05</span>常见误区</a></li>
+    <li><a href="#s6"><span class="n">06</span>与渗透测试的关系</a></li>
+    <li><a href="#s7"><span class="n">07</span>参考资料</a></li>
+  </ul>
+  <div class="side-foot">
+    <a href="https://github.com/AAAyzy1/homework" target="_blank" rel="noopener">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      AAAyzy1/homework
+    </a>
+  </div>
+</nav>
+
+<main class="main">
+  <header class="hero">
+    <div class="kicker">网络渗透测试 · 课程作业</div>
+    <h1>网络安全等级保护 2.0<br>学习理解与梳理</h1>
+    <p class="lead">本文记录我对等保 2.0 的定义背景、法律依据、等级划分、标准框架、具体要求与实施流程的理解，并结合渗透测试课程思考二者关系。</p>
+    <div class="meta">
+      <span class="chip">核心标准 <b>GB/T 22239—2019</b></span>
+      <span class="chip">发布 <b>2019-05</b></span>
+      <span class="chip">实施 <b>2019-12-01</b></span>
+      <span class="chip">保护等级 <b>五级</b></span>
+    </div>
+  </header>
+
+  <!-- ===== 01 核心内容 ===== -->
+  <section class="block" id="s1">
+    <div class="sec-head"><span class="no">01</span><h2>等保 2.0 核心内容</h2></div>
+
+    <h3>定义与背景</h3>
+    <ul>
+      <li>等保 2.0 是我国网络安全等级保护制度的新一代标准规范，核心标准为 <code>GB/T 22239—2019《信息安全技术 网络安全等级保护基本要求》</code>，于 <strong>2019 年 5 月发布、2019 年 12 月 1 日正式实施</strong>，代替 GB/T 22239—2008。</li>
+      <li>保护对象从传统信息系统，扩展到<strong>基础信息网络、云计算平台/系统、大数据应用/平台、物联网、工业控制系统、采用移动互联技术的系统</strong>等。</li>
+      <li>核心理念由等保 1.0 的<strong>被动防御</strong>，升级为<strong>主动防御、纵深防御、动态防护、精准防护</strong>，强调安全贯穿系统规划、建设和运维全过程。</li>
+    </ul>
+
+    <h3>法律依据</h3>
+    <ul>
+      <li><strong>《中华人民共和国网络安全法》</strong>（2017 年 6 月 1 日施行）第二十一条明确规定：国家实行网络安全等级保护制度，网络运营者必须履行安全保护义务。</li>
+      <li><strong>《数据安全法》</strong>（2021 年 9 月 1 日施行）、《个人信息保护法》等法律法规，进一步补充了数据安全与个人信息保护方面的要求。</li>
+      <li>未履行等级保护义务的单位，将面临责令整改、警告、罚款；情节严重的，可被责令暂停相关业务、停业整顿等。</li>
+    </ul>
+
+    <h3>等级划分</h3>
+    <p>根据等级保护对象受到破坏后，对<strong>公民/法人合法权益、社会秩序/公共利益、国家安全</strong>造成的危害程度，由低到高划分为五个级别：</p>
+    <div class="table-wrap">
+      <table>
+        <colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"></colgroup>
+        <thead><tr><th>级别</th><th>受破坏后的危害程度</th><th>监管方式</th><th>测评频率</th></tr></thead>
+        <tbody>
+          <tr><td><span class="lvl">第一级<small>自主保护级</small></span></td><td>损害公民、法人合法权益，不损害国家安全、社会秩序和公共利益</td><td>自主保护</td><td><span class="freq">可不予测评</span></td></tr>
+          <tr><td><span class="lvl">第二级<small>指导保护级</small></span></td><td>严重损害合法权益，或损害社会秩序和公共利益，不损害国家安全</td><td>指导保护</td><td><span class="freq">每两年一次</span></td></tr>
+          <tr><td><span class="lvl">第三级<small>监督保护级</small></span></td><td>严重损害社会秩序和公共利益，或损害国家安全</td><td>监督检查</td><td><span class="freq">每年一次</span></td></tr>
+          <tr><td><span class="lvl">第四级<small>强制保护级</small></span></td><td>特别严重损害社会秩序和公共利益，或严重损害国家安全</td><td>强制监督检查</td><td><span class="freq">每半年一次</span></td></tr>
+          <tr><td><span class="lvl">第五级<small>专控保护级</small></span></td><td>对国家安全造成特别严重损害</td><td>专门监督检查</td><td><span class="freq">按专门规定</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">一般中小企业核心系统多定为<strong>二级或三级</strong>；医疗、金融、政务、能源等关键行业的重要系统，通常按<strong>三级或以上</strong>要求保护，关键信息基础设施要求更高。</p>
+
+    <h3>核心目标</h3>
+    <ul>
+      <li>抵御外部攻击与入侵，防范非法访问；</li>
+      <li>防止敏感信息和重要数据被泄露、窃取、篡改；</li>
+      <li>保障系统持续、稳定运行，维护业务连续性。</li>
+    </ul>
+  </section>
+
+  <!-- ===== 02 标准框架 ===== -->
+  <section class="block" id="s2">
+    <div class="sec-head"><span class="no">02</span><h2>标准框架：一个中心、三重防护</h2></div>
+    <p>等保 2.0 采用 <strong>“通用要求 + 扩展要求”</strong> 的结构：<strong>安全通用要求</strong>是所有对象都必须满足的基础要求；<strong>安全扩展要求</strong>针对云计算、移动互联、物联网、工业控制系统等新技术形态附加。</p>
+    <div class="framework">
+      <div class="fw-center">安全管理中心<small>系统管理 · 审计管理 · 安全管理 · 集中管控</small></div>
+      <div class="fw-arrow">▲</div>
+      <div class="fw-grid">
+        <div class="fw-cell"><b>安全通信网络</b><span>网络架构 · 通信传输 · 可信接入</span></div>
+        <div class="fw-cell"><b>安全区域边界</b><span>边界防护 · 访问控制 · 入侵防范 · 安全审计</span></div>
+        <div class="fw-cell"><b>安全计算环境</b><span>身份鉴别 · 访问控制 · 入侵防范 · 数据安全</span></div>
+      </div>
+      <div class="fw-tags">
+        <div class="fw-tag tech"><b>技术 5 层面</b><span>安全物理环境、安全通信网络、安全区域边界、安全计算环境、安全管理中心</span></div>
+        <div class="fw-tag mgmt"><b>管理 5 层面</b><span>安全管理制度、安全管理机构、安全管理人员、安全建设管理、安全运维管理</span></div>
+      </div>
+    </div>
+    <p class="note">“一个中心、三重防护”即以<strong>安全管理中心</strong>为核心，覆盖<strong>通信网络、区域边界、计算环境</strong>三重防护，再加上安全物理环境，构成完整技术防护体系。</p>
+  </section>
+
+  <!-- ===== 03 具体要求 ===== -->
+  <section class="block" id="s3">
+    <div class="sec-head"><span class="no">03</span><h2>等保 2.0 具体要求</h2></div>
+
+    <h3>技术要求</h3>
+    <h4>物理安全</h4>
+    <ul>
+      <li>机房部署门禁、防火、防水、防潮、防盗、防雷等设施；</li>
+      <li>服务器等设备物理固定，做好防盗窃、防破坏；</li>
+      <li>配备 UPS 不间断电源等备用电力保障，级别越高持续供电要求越严。</li>
+    </ul>
+    <h4>网络安全（通信网络 / 区域边界）</h4>
+    <ul>
+      <li>边界部署防火墙等访问控制设备，实施网络区域划分与分级管理；</li>
+      <li>遵循最小化原则，关闭或限制非必要端口、服务对公网的暴露（如 <code>3389</code> 远程桌面、<code>22</code> SSH 应限制访问来源，而非直接对公网开放）；</li>
+      <li>在边界和重要节点进行入侵防范与安全审计，完整保存访问和操作记录。</li>
+    </ul>
+    <h4>计算环境安全</h4>
+    <ul>
+      <li>及时更新系统与组件补丁，修复已知漏洞；</li>
+      <li>设置 8 位以上、含多种字符类型（大小写字母、数字、特殊字符）的复杂口令并定期更换，重要系统启用双因素认证；</li>
+      <li>安装正版防恶意代码软件，并及时更新病毒库。</li>
+    </ul>
+    <h4>应用安全</h4>
+    <ul>
+      <li>登录环节增加验证码、登录失败处理（锁定 / 限速）等机制，防范暴力破解；</li>
+      <li>对所有用户输入进行校验和过滤，防范 SQL 注入、XSS 跨站脚本等攻击，防止恶意代码上传与执行。</li>
+    </ul>
+    <h4>数据安全</h4>
+    <ul>
+      <li>数据传输采用 HTTPS 等加密协议，重要数据存储采取数据库加密等措施；</li>
+      <li>建立定期备份与恢复机制，重要数据进行异地备份；</li>
+      <li>网络日志依法留存<strong>不少于六个月</strong>（依据《网络安全法》第二十一条）。</li>
+    </ul>
+
+    <h3>管理要求</h3>
+    <ul>
+      <li><strong>安全制度：</strong>制定完整的账户管理、漏洞修复、配置管理、运维操作等规章制度，明确安全责任人和岗位职责。</li>
+      <li><strong>人员培训：</strong>新入职员工必须接受安全教育培训，关键岗位签订保密协议；三级及以上系统重要岗位操作人员，要求具备相应专业资格、持证上岗。</li>
+      <li><strong>应急演练：</strong>制定应急预案，每年至少组织一次应急预案实操演练，并根据演练结果修订预案。</li>
+    </ul>
+  </section>
+
+  <!-- ===== 04 实施流程 ===== -->
+  <section class="block" id="s4">
+    <div class="sec-head"><span class="no">04</span><h2>实施流程</h2></div>
+    <p>等保工作的规定动作可概括为“<strong>定级 — 备案 — 建设整改 — 等级测评 — 监督检查</strong>”五个环节，形成持续闭环。</p>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-time">STEP 1</div>
+        <div class="tl-axis"><span class="tl-dot"></span></div>
+        <div class="tl-body"><b>定级</b><span>确定定级对象，初步判定安全保护等级；初步定为第二级及以上的对象，需组织专家评审并报主管部门核准。</span></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">STEP 2</div>
+        <div class="tl-axis"><span class="tl-dot"></span></div>
+        <div class="tl-body"><b>备案</b><span>定级确认后 30 个工作日内，向所在地设区的市级及以上公安机关网安部门备案，二级以上系统取得备案证明。</span></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">STEP 3</div>
+        <div class="tl-axis"><span class="tl-dot"></span></div>
+        <div class="tl-body"><b>建设整改</b><span>对照相应等级的标准要求，从技术和管理两方面进行安全建设与整改。</span></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">STEP 4</div>
+        <div class="tl-axis"><span class="tl-dot"></span></div>
+        <div class="tl-body"><b>等级测评</b><span>委托具备资质的第三方测评机构开展专业测评，出具合规报告；三级系统每年至少一次，二级系统一般每两年一次。</span></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">STEP 5</div>
+        <div class="tl-axis"><span class="tl-dot"></span></div>
+        <div class="tl-body"><b>持续监督</b><span>接受公安机关及监管部门的定期监督、检查与指导，系统发生重大变更时重新评估，实现动态合规。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 05 常见误区 ===== -->
+  <section class="block" id="s5">
+    <div class="sec-head"><span class="no">05</span><h2>常见误区</h2></div>
+    <div class="myth">
+      <div class="m-item"><div class="m-no">01</div><div><b><span class="x">×</span>只配一台防火墙就能达标</b><span>等保是“技术 + 管理”的体系化工程，单点设备无法替代整体防护和制度建设。</span></div></div>
+      <div class="m-item"><div class="m-no">02</div><div><b><span class="x">×</span>小企业 / 小系统无需合规</b><span>只要属于网络运营者、对外提供服务或涉及用户数据存储，就应依法定级并履行义务，与企业规模没有必然关系。</span></div></div>
+      <div class="m-item"><div class="m-no">03</div><div><b><span class="x">×</span>用虚假手段通过测评</b><span>提供虚假材料、规避测评属于违法行为，一经查实将承担严重法律后果，也无法真正抵御风险。</span></div></div>
+      <div class="m-item"><div class="m-no">04</div><div><b><span class="x">×</span>一次测评终身有效</b><span>等保是持续性工作，必须定期复测，并在系统发生重大变更时重新评估。</span></div></div>
+    </div>
+  </section>
+
+  <!-- ===== 06 与渗透测试的关系 ===== -->
+  <section class="block" id="s6">
+    <div class="sec-head"><span class="no">06</span><h2>与渗透测试的关系（个人理解）</h2></div>
+    <ul>
+      <li><strong>渗透测试是手段，等保是合规框架与目标。</strong>等级测评中的工具测试 / 安全测试，会用到漏洞扫描、渗透测试等方法验证防护措施是否真实有效（如物联网安全扩展要求中明确提到感知层渗透测试）。</li>
+      <li><strong>渗透测试必须合法授权。</strong>应在书面授权范围内开展，严格限定测试范围、时间和手段，禁止任何未授权测试；这与等保“依法保护、责任明确”的内在要求一致。</li>
+      <li><strong>形成闭环改进。</strong>渗透测试发现的漏洞，最终回流到等保“定级—备案—整改—测评—监督”的闭环中，形成“发现—修复—验证”的持续安全改进。</li>
+    </ul>
+  </section>
+
+  <!-- ===== 07 参考资料 ===== -->
+  <section class="block" id="s7">
+    <div class="sec-head"><span class="no">07</span><h2>参考资料</h2></div>
+    <ol class="refs">
+      <li>GB/T 22239—2019《信息安全技术 网络安全等级保护基本要求》</li>
+      <li>GB/T 22240—2020《信息安全技术 网络安全等级保护定级指南》</li>
+      <li>GB/T 28448—2019《信息安全技术 网络安全等级保护测评要求》</li>
+      <li>GB/T 28449—2018《信息安全技术 网络安全等级保护测评过程指南》</li>
+      <li>《中华人民共和国网络安全法》</li>
+      <li>公安部《网络安全等级保护 2.0 标准解读》</li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>网络渗透测试课程作业 · 等保 2.0 学习笔记</span>
+    <a href="https://github.com/AAAyzy1/homework" target="_blank" rel="noopener">github.com/AAAyzy1/homework</a>
+  </footer>
+
+<script>
+(function(){
+  var tocLinks=[].slice.call(document.querySelectorAll('#toc a'));
+  var sections=tocLinks.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  var sidebar=document.getElementById('sidebar');
+  var backdrop=document.getElementById('backdrop');
+  var menuBtn=document.getElementById('menuBtn');
+
+  // 滚动监听高亮当前章节
+  function setActive(id){
+    tocLinks.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href')==='#'+id);
+    });
+  }
+  if('IntersectionObserver' in window){
+    var obs=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting) setActive(en.target.id); });
+    },{rootMargin:'-15% 0px -70% 0px',threshold:0});
+    sections.forEach(function(s){ if(s) obs.observe(s); });
+  }
+
+  // 移动端抽屉
+  function closeMenu(){sidebar.classList.remove('show');backdrop.classList.remove('show');menuBtn.classList.remove('open');}
+  menuBtn.addEventListener('click',function(){
+    var open=sidebar.classList.toggle('show');
+    backdrop.classList.toggle('show',open);
+    menuBtn.classList.toggle('open',open);
+  });
+  backdrop.addEventListener('click',closeMenu);
+  tocLinks.forEach(function(a){ a.addEventListener('click',function(){ if(window.innerWidth<=900) closeMenu(); }); });
+})();
+</script>
+</main>
+</body>
+</html>
